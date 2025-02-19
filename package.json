@@ -1,0 +1,34 @@
+{
+  "name": "@li0ard/tinytlv",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "author": "li0ard",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/li0ard/tinytlv.git"
+  },
+  "bugs": {
+    "url": "https://github.com/li0ard/tinytlv/issues"
+  },
+  "homepage": "https://github.com/li0ard/tinytlv#readme",
+  "scripts": {
+    "build": "rm -rf dist/ && tsc --project tsconfig.build.json",
+    "docs": "typedoc --options .config/typedoc/config.cjs"
+  },
+  "description": "Tiny TLV decoder and encoder",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typedoc": "^0.27.7"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "files": ["dist"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": ["tlv", "bertlv", "emv", "iso7816", "dgi", "dol"]
+}
