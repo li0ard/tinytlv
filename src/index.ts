@@ -1,23 +1,23 @@
-import { adjustTag, adjustValue, bytesToHex, getBufferLength, hexToBytes } from "./utils";
+import { adjustTag, adjustValue, bytesToHex, getBufferLength, hexToBytes } from "./utils.js";
 
 /** TLV class */
 export class TLV {
     /** Tag (as hex) */
-    tag: string
+    tag: string;
     /** Length */
-    length: number
+    length: number;
     /** Value (as hex) */
-    value: string
+    value: string;
     /** Value (as Uint8Array) */
-    byteValue: Uint8Array
+    byteValue: Uint8Array;
     /** Childs */
-    childs: TLV[]
+    childs: TLV[];
     /** Parent object */
-    parent: TLV | null = null
+    parent: TLV | null = null;
     /** Is constructed or primitive? */
-    isConstructed: boolean
+    isConstructed: boolean;
     /** Combined length of tag, length and value field */
-    size: number
+    size: number;
 
     /**
      * Initialize TLV object
@@ -26,20 +26,17 @@ export class TLV {
      * @example new TLV('84', '325041592E5359532E4444463031');
      */
     constructor(tag: string | number, value: string | Uint8Array) {
-        this.tag = adjustTag(tag)
+        this.tag = adjustTag(tag);
         this.value = adjustValue(value);
         this.length = this.value.length / 2;
         this.byteValue = hexToBytes(this.value);
         this.childs = [];
 
-        let bTag = hexToBytes(this.tag);
+        const bTag = hexToBytes(this.tag);
         this.size = bTag.length + getBufferLength(this.length).length + this.byteValue.length;
 
-        if ((bTag[0] & 0x20) === 0x00) {
-            this.isConstructed = false;
-        } else {
-            this.isConstructed = true;
-        }
+        if ((bTag[0] & 0x20) === 0x00) this.isConstructed = false;
+        else this.isConstructed = true;
 
         let offset = 0;
         if (this.isConstructed) {
@@ -57,8 +54,7 @@ export class TLV {
      * @returns {string}
      */
     toString(): string {
-        let byteLength = getBufferLength(this.length);
-        return `${this.tag}${bytesToHex(byteLength)}${this.value}`.toLowerCase();
+        return `${this.tag}${bytesToHex(getBufferLength(this.length))}${this.value}`.toLowerCase();
     }
 
     /**
@@ -66,8 +62,7 @@ export class TLV {
      * @returns {Uint8Array}
      */
     toBytes(): Uint8Array {
-        let byteLength = getBufferLength(this.length);
-        return hexToBytes(`${this.tag}${bytesToHex(byteLength)}${this.value}`);
+        return hexToBytes(`${this.tag}${bytesToHex(getBufferLength(this.length))}${this.value}`);
     }
 
     /**
@@ -76,18 +71,14 @@ export class TLV {
      * @returns {TLV | undefined}
      */
     find(tag: string | number): TLV | undefined {
-        let upperTAG = adjustTag(tag);
+        const upperTAG = adjustTag(tag);
 
         for(let child of this.childs) {
-            if (child.tag === upperTAG) {
-                return child;
-            }
+            if (child.tag === upperTAG) return child;
 
             if (child.isConstructed) {
-                let tlv = child.find(tag);
-                if (tlv !== undefined) {
-                    return tlv;
-                }
+                const tlv = child.find(tag);
+                if (tlv !== undefined) return tlv;
             }
         }
     }
@@ -98,19 +89,15 @@ export class TLV {
      * @returns {TLV[]}
      */
     findAll(tag: string | number): TLV[] {
-        let upperTAG = adjustTag(tag);
+        const upperTAG = adjustTag(tag);
         let results: TLV[] = [];
 
         for (let child of this.childs) {
-            if (child.tag === upperTAG) {
-                results.push(child);
-            }
+            if (child.tag === upperTAG) results.push(child);
 
             if (child.isConstructed) {
-                let tlv = child.findAll(tag);
-                if (tlv.length !== 0) {
-                    results = results.concat(tlv);
-                }
+                const tlv = child.findAll(tag);
+                if (tlv.length !== 0) results = results.concat(tlv);
             }
         }
         return results;
@@ -123,11 +110,8 @@ export class TLV {
      */
     static parse(data: string | Uint8Array): TLV {
         let buf: Uint8Array;
-        if(typeof data === 'string') {
-            buf = hexToBytes(data);
-        } else {
-            buf = data;
-        }
+        if(typeof data === 'string') buf = hexToBytes(data);
+        else buf = data;
 
         let tag: string;
         let tagLength: number = 1;
@@ -138,34 +122,22 @@ export class TLV {
             let idx = 1;
             do {
                 tagLength++;
-                if (idx > 4) {
-                    throw Error("Invalid tag length");
-                }
+                if (idx > 4) throw Error("Invalid tag length");
             } while ((buf[idx++] & 0x80) === 0x80);
         }
 
         tag = bytesToHex(buf.slice(0, tagLength));
         let lenOffset = tagLength;
 
-        if ((buf[lenOffset] & 0x80) === 0x80) {
-            byteLength = (buf[lenOffset] & 0x7f) + 1;
-        } else {
-            byteLength = 1;
-        }
+        if ((buf[lenOffset] & 0x80) === 0x80) byteLength = (buf[lenOffset] & 0x7f) + 1;
+        else byteLength = 1;
 
-        if (byteLength === 1) {
-            length = buf[lenOffset];
-        } else if (byteLength === 2) {
-            length = buf[lenOffset + 1];
-        } else if (byteLength === 3) {
-            length = (buf[lenOffset + 1] << 8) | buf[lenOffset + 2];
-        } else if (byteLength === 4) {
-            length = (buf[lenOffset + 1] << 16) | (buf[lenOffset + 2] << 8) | buf[lenOffset + 3];
-        } else if (byteLength === 5) {
-            length = (buf[lenOffset + 1] << 24) | (buf[lenOffset + 2] << 16) | (buf[lenOffset + 3] << 8) | buf[lenOffset + 4];
-        } else {
-            throw Error("Invalid length: " + byteLength);
-        }
+        if (byteLength === 1) length = buf[lenOffset];
+        else if (byteLength === 2) length = buf[lenOffset + 1];
+        else if (byteLength === 3) length = (buf[lenOffset + 1] << 8) | buf[lenOffset + 2];
+        else if (byteLength === 4) length = (buf[lenOffset + 1] << 16) | (buf[lenOffset + 2] << 8) | buf[lenOffset + 3];
+        else if (byteLength === 5) length = (buf[lenOffset + 1] << 24) | (buf[lenOffset + 2] << 16) | (buf[lenOffset + 3] << 8) | buf[lenOffset + 4];
+        else throw Error("Invalid length: " + byteLength);
 
         return new TLV(tag, buf.slice(tagLength + byteLength, tagLength + byteLength + length));
     }
